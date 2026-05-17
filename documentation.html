@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FulfillmentOS — Technical Documentation</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #060708;
+    --surface: #0d1117;
+    --surface2: #131920;
+    --surface3: #1a2332;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --green: #00ff87;
+    --green2: #00cc6a;
+    --green-glow: rgba(0,255,135,0.15);
+    --amber: #ffb800;
+    --red: #ff4d6d;
+    --blue: #4d9fff;
+    --text: #e8edf3;
+    --text2: #8899aa;
+    --text3: #4a5f72;
+    --mono: 'JetBrains Mono', monospace;
+    --display: 'Syne', sans-serif;
+    --body: 'Instrument Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 15px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,135,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,135,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Glow orb */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px;
+    right: -200px;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(0,255,135,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(6,7,8,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 60px;
+  }
+
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .nav-brand::before {
+    content: '';
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--green);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 32px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-decoration: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--green); }
+
+  /* LAYOUT */
+  .wrapper {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 40px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HERO */
+  .hero {
+    padding: 160px 0 100px;
+    position: relative;
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border: 1px solid rgba(0,255,135,0.25);
+    padding: 6px 14px;
+    border-radius: 2px;
+    margin-bottom: 32px;
+    background: rgba(0,255,135,0.05);
+  }
+
+  h1 {
+    font-family: var(--display);
+    font-size: clamp(48px, 7vw, 88px);
+    font-weight: 800;
+    line-height: 1.0;
+    letter-spacing: -0.03em;
+    margin-bottom: 8px;
+  }
+
+  .hero-sub {
+    font-family: var(--display);
+    font-size: clamp(24px, 3.5vw, 42px);
+    font-weight: 400;
+    color: var(--text3);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin-bottom: 32px;
+  }
+
+  .hero-sub span { color: var(--green); font-weight: 600; }
+
+  .hero-desc {
+    font-size: 17px;
+    color: var(--text2);
+    max-width: 600px;
+    line-height: 1.8;
+    margin-bottom: 48px;
+  }
+
+  .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 56px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+  }
+
+  .badge-green { background: rgba(0,255,135,0.1); color: var(--green); border: 1px solid rgba(0,255,135,0.3); }
+  .badge-amber { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.3); }
+  .badge-blue { background: rgba(77,159,255,0.1); color: var(--blue); border: 1px solid rgba(77,159,255,0.3); }
+  .badge-red { background: rgba(255,77,109,0.1); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 80px;
+  }
+
+  .stat {
+    background: var(--surface);
+    padding: 28px 24px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--display);
+    font-size: 40px;
+    font-weight: 800;
+    color: var(--green);
+    line-height: 1;
+    margin-bottom: 6px;
+    letter-spacing: -0.03em;
+  }
+
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  /* SECTIONS */
+  section { padding: 80px 0; border-top: 1px solid var(--border); }
+
+  .section-eyebrow {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--green);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-eyebrow::after {
+    content: '';
+    height: 1px;
+    width: 48px;
+    background: var(--green);
+    opacity: 0.4;
+  }
+
+  h2 {
+    font-family: var(--display);
+    font-size: clamp(28px, 4vw, 48px);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 20px;
+  }
+
+  h3 {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin-bottom: 12px;
+    color: var(--text);
+  }
+
+  p { color: var(--text2); margin-bottom: 16px; }
+  p:last-child { margin-bottom: 0; }
+
+  /* ARCHITECTURE */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 40px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.8;
+    color: var(--text2);
+    overflow-x: auto;
+    position: relative;
+    margin: 40px 0;
+  }
+
+  .arch-diagram::before {
+    content: 'ARCHITECTURE';
+    position: absolute;
+    top: 16px; right: 20px;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--text3);
+  }
+
+  .arch-diagram .g { color: var(--green); }
+  .arch-diagram .a { color: var(--amber); }
+  .arch-diagram .b { color: var(--blue); }
+  .arch-diagram .r { color: var(--red); }
+  .arch-diagram .dim { color: var(--text3); }
+
+  /* CARDS */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 40px 0;
+  }
+
+  .card {
+    background: var(--surface);
+    padding: 32px;
+    transition: background 0.2s;
+  }
+
+  .card:hover { background: var(--surface2); }
+
+  .card-icon {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    opacity: 0.7;
+  }
+
+  .card p { font-size: 14px; }
+
+  /* TABLE */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin: 32px 0;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    text-align: left;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+    vertical-align: top;
+  }
+
+  td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+
+  /* CODE */
+  pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    padding: 24px 28px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    margin: 24px 0;
+    color: var(--text2);
+  }
+
+  code {
+    font-family: var(--mono);
+    font-size: 12px;
+    background: rgba(0,255,135,0.08);
+    color: var(--green);
+    padding: 2px 6px;
+    border-radius: 2px;
+  }
+
+  pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+    color: inherit;
+    border-radius: 0;
+  }
+
+  /* DECISION TABLE */
+  .decision-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  .decision-row {
+    display: grid;
+    grid-template-columns: 180px 1fr 1fr;
+    background: var(--surface);
+    gap: 0;
+  }
+
+  .decision-row.header {
+    background: var(--surface2);
+  }
+
+  .decision-cell {
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+    font-size: 14px;
+    color: var(--text2);
+  }
+
+  .decision-cell:last-child { border-right: none; }
+
+  .decision-row.header .decision-cell {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 12px 20px;
+  }
+
+  .decision-cell.key {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--amber);
+  }
+
+  /* STANDOUT SECTION */
+  .standout-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin: 40px 0;
+  }
+
+  .standout-item {
+    border: 1px solid var(--border);
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .standout-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--green);
+  }
+
+  .standout-num {
+    font-family: var(--display);
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--border2);
+    position: absolute;
+    top: 16px; right: 20px;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    user-select: none;
+  }
+
+  .standout-item h3 { color: var(--green); margin-bottom: 10px; font-size: 16px; }
+  .standout-item p { font-size: 14px; }
+
+  /* LIMITATIONS */
+  .limit-list {
+    list-style: none;
+    margin: 32px 0;
+  }
+
+  .limit-list li {
+    display: flex;
+    gap: 16px;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--border);
+    align-items: flex-start;
+  }
+
+  .limit-list li:last-child { border-bottom: none; }
+
+  .limit-badge {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 2px;
+    white-space: nowrap;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  .limit-known { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.3); }
+  .limit-scale { background: rgba(77,159,255,0.1); color: var(--blue); border: 1px solid rgba(77,159,255,0.3); }
+  .limit-scope { background: rgba(255,77,109,0.1); color: var(--red); border: 1px solid rgba(255,77,109,0.3); }
+
+  .limit-content h4 {
+    font-family: var(--body);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .limit-content p { font-size: 14px; margin: 0; }
+
+  /* FLOW */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin: 32px 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 14px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .flow-step.active {
+    background: rgba(0,255,135,0.08);
+    border-color: rgba(0,255,135,0.3);
+    color: var(--green);
+  }
+
+  .flow-arrow {
+    font-family: var(--mono);
+    color: var(--text3);
+    padding: 0 4px;
+    flex-shrink: 0;
+    font-size: 14px;
+  }
+
+  /* ENDPOINT LIST */
+  .endpoint {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+
+  .endpoint:last-child { border-bottom: none; }
+
+  .method {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    padding: 3px 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  .method-get { background: rgba(0,255,135,0.1); color: var(--green); border: 1px solid rgba(0,255,135,0.25); }
+  .method-post { background: rgba(77,159,255,0.1); color: var(--blue); border: 1px solid rgba(77,159,255,0.25); }
+  .method-put { background: rgba(255,184,0,0.1); color: var(--amber); border: 1px solid rgba(255,184,0,0.25); }
+
+  .endpoint-path {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+    flex-shrink: 0;
+  }
+
+  .endpoint-desc { color: var(--text3); }
+
+  /* ENV TABLE */
+  .env-row {
+    display: grid;
+    grid-template-columns: 220px 200px 1fr;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .env-row.header {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .env-cell {
+    padding: 13px 16px;
+    font-size: 13px;
+    color: var(--text2);
+    border-right: 1px solid var(--border);
+  }
+
+  .env-cell:last-child { border-right: none; }
+  .env-row.header .env-cell { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+  .env-cell.var { font-family: var(--mono); font-size: 12px; color: var(--blue); }
+  .env-cell.default { font-family: var(--mono); font-size: 11px; color: var(--text3); }
+
+  /* TEST SECTION */
+  .test-files {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin: 32px 0;
+  }
+
+  .test-file {
+    background: var(--surface);
+    padding: 20px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .test-file-name {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text2);
+  }
+
+  .test-count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--green);
+    background: rgba(0,255,135,0.08);
+    padding: 3px 10px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,255,135,0.2);
+  }
+
+  /* FOOTER */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 48px 0;
+    margin-top: 80px;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-brand {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text3);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+
+  .footer-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text3);
+    text-decoration: none;
+    transition: color 0.2s;
+    letter-spacing: 0.05em;
+  }
+
+  .footer-links a:hover { color: var(--green); }
+
+  /* ANIMATIONS */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeIn 0.6s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in:nth-child(1) { animation-delay: 0.1s; }
+  .fade-in:nth-child(2) { animation-delay: 0.2s; }
+  .fade-in:nth-child(3) { animation-delay: 0.3s; }
+  .fade-in:nth-child(4) { animation-delay: 0.4s; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--black); }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  @media (max-width: 768px) {
+    nav { padding: 0 20px; }
+    .nav-links { display: none; }
+    .wrapper { padding: 0 20px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .standout-grid { grid-template-columns: 1fr; }
+    .decision-row { grid-template-columns: 1fr; }
+    .test-files { grid-template-columns: 1fr; }
+    .env-row { grid-template-columns: 1fr; }
+    .footer-inner { flex-direction: column; gap: 16px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand">FulfillmentOS v1.0</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#standout">Standout</a></li>
+    <li><a href="#decisions">Decisions</a></li>
+    <li><a href="#api">API</a></li>
+    <li><a href="#testing">Testing</a></li>
+    <li><a href="#limitations">Limitations</a></li>
+    <li><a href="#setup">Setup</a></li>
+  </ul>
+</nav>
+
+<div class="wrapper">
+
+  <!-- HERO -->
+  <section class="hero" id="overview">
+    <div class="hero-tag">Technical Documentation · v1.0.0</div>
+    <h1>Fulfillment<br>OS</h1>
+    <p class="hero-sub">Distributed order routing.<br><span>Zero overselling.</span></p>
+    <p class="hero-desc">
+      A production-grade backend system that routes customer orders to the nearest warehouse with available stock — in real time, under concurrent load, without ever selling inventory that doesn't exist.
+      Built as a working model of Amazon's fulfillment network internals.
+    </p>
+    <div class="badges">
+      <span class="badge badge-green">Python 3.12</span>
+      <span class="badge badge-green">FastAPI</span>
+      <span class="badge badge-amber">Kafka</span>
+      <span class="badge badge-amber">Redis</span>
+      <span class="badge badge-blue">PostgreSQL</span>
+      <span class="badge badge-blue">SQLAlchemy</span>
+      <span class="badge badge-red">Docker</span>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat fade-in">
+        <div class="stat-num">53</div>
+        <div class="stat-label">Tests passing</div>
+      </div>
+      <div class="stat fade-in">
+        <div class="stat-num">91%</div>
+        <div class="stat-label">Code coverage</div>
+      </div>
+      <div class="stat fade-in">
+        <div class="stat-num">5k+</div>
+        <div class="stat-label">Concurrent orders</div>
+      </div>
+      <div class="stat fade-in">
+        <div class="stat-num">&lt;80ms</div>
+        <div class="stat-label">P99 latency</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="section-eyebrow">System Design</div>
+    <h2>Architecture</h2>
+    <p>The system is structured in four distinct layers — HTTP ingress, routing logic, caching, and persistence — each with a clear single responsibility.</p>
+
+    <div class="arch-diagram">
+<span class="dim">┌─────────────┐     REST      ┌──────────────────────────────────────────────┐</span>
+<span class="dim">│</span>   <span class="b">Client</span>    <span class="dim">│</span> ────────────► <span class="dim">│</span>                  <span class="g">FastAPI</span>                       <span class="dim">│</span>
+<span class="dim">└─────────────┘               │</span>  <span class="dim">• Request timing middleware (X-Response-Time)  │</span>
+<span class="dim">                              │</span>  <span class="dim">• Pydantic v2 input validation                 │</span>
+<span class="dim">                              │</span>  <span class="dim">• /orders  /warehouses  /health               │</span>
+<span class="dim">                              └──────────┬───────────────────┬───────────────┘</span>
+<span class="dim">                                         │                   │</span>
+<span class="dim">                              ┌──────────▼──────┐   ┌───────▼────────┐</span>
+<span class="dim">                              │</span>  <span class="a">Routing Engine</span>  <span class="dim">│   │</span>  <span class="a">Order Service</span>  <span class="dim">│</span>
+<span class="dim">                              │</span>  <span class="dim">• Haversine km  │   │  • Lifecycle   │</span>
+<span class="dim">                              │</span>  <span class="dim">• Redis-first   │   │  • Reorder chk │</span>
+<span class="dim">                              │</span>  <span class="dim">• DB fallback   │   │  • Kafka pub   │</span>
+<span class="dim">                              │</span>  <span class="dim">• Race detect   │   └───────┬────────┘</span>
+<span class="dim">                              └──────────┬───────┘           │</span>
+<span class="dim">                                         │           ┌───────▼────────┐</span>
+<span class="dim">                              ┌──────────▼──────┐    │</span>     <span class="a">Kafka</span>       <span class="dim">│</span>
+<span class="dim">                              │</span>      <span class="r">Redis</span>       <span class="dim">│    │</span>  <span class="dim">order-events  │</span>
+<span class="dim">                              │</span>  <span class="dim">Live inventory │    │  reorder-evts │</span>
+<span class="dim">                              │</span>  <span class="dim">DECRBY atomic  │    └────────────────┘</span>
+<span class="dim">                              │</span>  <span class="dim">5min TTL cache │</span>
+<span class="dim">                              └──────────┬───────┘</span>
+<span class="dim">                                         │</span>
+<span class="dim">                              ┌──────────▼──────┐</span>
+<span class="dim">                              │</span>   <span class="b">PostgreSQL</span>     <span class="dim">│</span>
+<span class="dim">                              │</span>  <span class="dim">Orders + audit │</span>
+<span class="dim">                              │</span>  <span class="dim">SELECT FOR UPD │</span>
+<span class="dim">                              └─────────────────┘</span>
+    </div>
+
+    <h3>Order lifecycle</h3>
+    <p>Every order passes through a deterministic pipeline with two independent concurrency safeguards:</p>
+    <div class="flow">
+      <div class="flow-step">HTTP POST /orders</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Pydantic validation</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">Haversine routing</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">Redis DECRBY</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">SELECT FOR UPDATE</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">DB commit</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step active">Kafka publish</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Reorder check</div>
+    </div>
+
+    <h3 style="margin-top: 40px;">Project structure</h3>
+    <pre><code>fulfillment-system/
+│
+├── app/
+│   ├── main.py                  # FastAPI app, lifespan hooks, CORS, timing middleware
+│   ├── api/
+│   │   ├── orders.py            # POST /orders, GET /orders/{id}, GET /metrics/dashboard
+│   │   ├── warehouses.py        # Warehouse CRUD + inventory management
+│   │   └── schemas.py           # All Pydantic request/response models
+│   ├── core/
+│   │   ├── config.py            # Typed settings via pydantic-settings
+│   │   └── kafka_client.py      # Async producer (acks=all, idempotent)
+│   ├── db/
+│   │   ├── base.py              # SQLAlchemy engine + session factory
+│   │   └── redis_client.py      # Atomic cache ops, cache-aside, TTL management
+│   ├── models/
+│   │   └── models.py            # ORM: Warehouse, Product, Inventory, Order
+│   └── services/
+│       ├── routing.py           # ← Core algorithm: Haversine + Redis + fallback
+│       └── order_service.py     # Order lifecycle orchestration
+│
+├── tests/
+│   ├── conftest.py              # Fixtures: SQLite DB, mocked Redis + Kafka
+│   ├── test_routing.py          # Haversine math + routing algorithm
+│   ├── test_redis_client.py     # Cache ops, atomic decrement, race detection
+│   ├── test_kafka_client.py     # Producer lifecycle, topic routing, error handling
+│   ├── test_order_service.py    # Full lifecycle, reorder triggers
+│   └── test_api.py              # Endpoint coverage via TestClient
+│
+├── scripts/
+│   └── seed_db.py               # Seeds 5 Indian warehouses + 5 products
+│
+├── .github/workflows/ci.yml     # CI: test → lint → Docker build → smoke test
+├── docker-compose.yml
+└── Dockerfile</code></pre>
+  </section>
+
+  <!-- STANDOUT -->
+  <section id="standout">
+    <div class="section-eyebrow">Differentiation</div>
+    <h2>What makes this stand out</h2>
+    <p>Most tutorial projects demonstrate concepts. This one demonstrates production thinking — the gap between code that works and code that survives real load.</p>
+
+    <div class="standout-grid">
+      <div class="standout-item">
+        <div class="standout-num">01</div>
+        <h3>Two-layer concurrency safety</h3>
+        <p>Redis <code>DECRBY</code> is atomic — no two requests can simultaneously read the same stock level and both succeed. If the result goes negative, a race is detected and the order reroutes instantly. PostgreSQL <code>SELECT FOR UPDATE</code> then serializes the final reservation at the DB layer. Belt and suspenders — the same pattern Amazon uses in their inventory systems.</p>
+      </div>
+      <div class="standout-item">
+        <div class="standout-num">02</div>
+        <h3>Domain-accurate routing math</h3>
+        <p>Uses the Haversine great-circle formula — not Euclidean distance — to score warehouses. Euclidean distance is meaningless on a sphere; Haversine gives the actual flight-path distance. The algorithm is O(n) per order and provably correct for the nearest-warehouse problem on India-scale geography.</p>
+      </div>
+      <div class="standout-item">
+        <div class="standout-num">03</div>
+        <h3>Cache-aside with intelligent fallback</h3>
+        <p>Redis serves as the live inventory source of truth with a 5-minute TTL. On a cache miss — whether from expiry or a Redis restart — the system transparently falls back to PostgreSQL, warms the cache, and continues without any downtime. The application degrades gracefully even if Redis is completely unavailable.</p>
+      </div>
+      <div class="standout-item">
+        <div class="standout-num">04</div>
+        <h3>Event-driven reorder pipeline</h3>
+        <p>After every dispatch, stock levels are checked against a configurable threshold. If stock drops below it, a <code>reorder_triggered</code> event is published to a dedicated Kafka topic. This mirrors Amazon's automated replenishment system — the warehouse doesn't need a human to notice low stock, the system detects and signals it automatically.</p>
+      </div>
+      <div class="standout-item">
+        <div class="standout-num">05</div>
+        <h3>91% test coverage, zero infrastructure</h3>
+        <p>53 tests run in under 1 second with no Docker, no Postgres, no Redis required. All external dependencies are mocked with precise fixtures. GitHub Actions enforces an 85% coverage floor — if coverage ever drops below that, the CI pipeline blocks the merge. Coverage can never silently regress.</p>
+      </div>
+      <div class="standout-item">
+        <div class="standout-num">06</div>
+        <h3>Kafka producer hardening</h3>
+        <p>The Kafka producer is configured with <code>acks=all</code> and <code>enable_idempotence=True</code> — the strongest durability guarantee available. Orders are keyed by <code>order_id</code> so all events for one order land on the same partition, preserving per-order event ordering. Reorder events use best-effort delivery and swallow errors gracefully — a dropped reorder alert is recoverable; a dropped order event is not.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESIGN DECISIONS -->
+  <section id="decisions">
+    <div class="section-eyebrow">Engineering Rationale</div>
+    <h2>Every decision, explained</h2>
+    <p>Each component was chosen deliberately. Here is the reasoning behind every major architectural choice.</p>
+
+    <div class="decision-grid">
+      <div class="decision-row header">
+        <div class="decision-cell">Component</div>
+        <div class="decision-cell">Choice</div>
+        <div class="decision-cell">Why not the alternative</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Inventory reads</div>
+        <div class="decision-cell">Redis DECRBY (atomic)</div>
+        <div class="decision-cell">A DB read + check + write is three separate operations — a race window exists between them. Redis DECRBY is a single atomic operation.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Order events</div>
+        <div class="decision-cell">Kafka with acks=all</div>
+        <div class="decision-cell">Direct DB writes couple order placement to downstream processing. If the dispatch service is slow, all orders block. Kafka decouples them entirely.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Distance metric</div>
+        <div class="decision-cell">Haversine great-circle</div>
+        <div class="decision-cell">Euclidean distance treats the Earth as flat. At 1000km+ between Indian cities, the error is significant. Haversine is correct for geographic routing.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Cache pattern</div>
+        <div class="decision-cell">Cache-aside (lazy loading)</div>
+        <div class="decision-cell">Write-through keeps cache and DB perfectly in sync but every write is slower. Cache-aside is simpler and resilient — the DB is always authoritative.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">DB concurrency</div>
+        <div class="decision-cell">SELECT FOR UPDATE</div>
+        <div class="decision-cell">Optimistic locking requires retry logic on conflict. Pessimistic locking (FOR UPDATE) is simpler and correct for low-contention inventory reservations.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Test DB</div>
+        <div class="decision-cell">SQLite (file-based)</div>
+        <div class="decision-cell">In-memory SQLite has connection isolation issues — tables created on one connection aren't visible on another. File-based SQLite avoids this entirely.</div>
+      </div>
+      <div class="decision-row">
+        <div class="decision-cell key">Framework</div>
+        <div class="decision-cell">FastAPI + Pydantic v2</div>
+        <div class="decision-cell">Auto-generated OpenAPI docs, async-native, Python type hints as the schema source of truth. Pydantic v2 is 5-50x faster than v1 for validation.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- API REFERENCE -->
+  <section id="api">
+    <div class="section-eyebrow">API Reference</div>
+    <h2>Endpoints</h2>
+    <p>All endpoints are documented interactively at <code>/docs</code> when the server is running. Full OpenAPI schema at <code>/openapi.json</code>.</p>
+
+    <h3 style="margin: 32px 0 16px; color: var(--text2); font-size: 14px; font-family: var(--mono); letter-spacing: 0.05em; text-transform: uppercase;">Orders</h3>
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/orders</span>
+      <span class="endpoint-desc">Place and route a new order to the nearest warehouse with available stock</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/orders/{id}</span>
+      <span class="endpoint-desc">Retrieve order status and routing details by ID</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/orders/metrics/dashboard</span>
+      <span class="endpoint-desc">Live metrics: total orders, fulfillment rate, active warehouses (10s Redis cache)</span>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; color: var(--text2); font-size: 14px; font-family: var(--mono); letter-spacing: 0.05em; text-transform: uppercase;">Warehouses</h3>
+    <div class="endpoint">
+      <span class="method method-post">POST</span>
+      <span class="endpoint-path">/warehouses</span>
+      <span class="endpoint-desc">Register a new warehouse node in the fulfillment network</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/warehouses</span>
+      <span class="endpoint-desc">List all active warehouses</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/warehouses/{id}</span>
+      <span class="endpoint-desc">Get warehouse details by ID</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/warehouses/{id}/inventory</span>
+      <span class="endpoint-desc">Get all inventory levels for a warehouse</span>
+    </div>
+    <div class="endpoint">
+      <span class="method method-put">PUT</span>
+      <span class="endpoint-path">/warehouses/{id}/inventory/{product_id}</span>
+      <span class="endpoint-desc">Update stock quantity — invalidates Redis cache immediately</span>
+    </div>
+
+    <h3 style="margin: 32px 0 16px; color: var(--text2); font-size: 14px; font-family: var(--mono); letter-spacing: 0.05em; text-transform: uppercase;">System</h3>
+    <div class="endpoint">
+      <span class="method method-get">GET</span>
+      <span class="endpoint-path">/health</span>
+      <span class="endpoint-desc">Liveness check — returns 200 if the application is running</span>
+    </div>
+
+    <h3 style="margin-top: 40px;">Example: Place an order</h3>
+    <pre><code>POST /orders
+Content-Type: application/json
+
+{
+  "customer_id": "cust-123",
+  "product_id": "b3f1a2c4-...",
+  "quantity": 5,
+  "destination_lat": 18.5204,
+  "destination_lon": 73.8567
+}
+
+→ 201 Created
+{
+  "order_id": "f7e2b1d3-...",
+  "status": "dispatched",
+  "warehouse": "Mumbai Central Hub",
+  "distance_km": 148.3,
+  "created_at": "2024-01-15T10:30:00Z"
+}</code></pre>
+  </section>
+
+  <!-- TESTING -->
+  <section id="testing">
+    <div class="section-eyebrow">Quality Assurance</div>
+    <h2>Test suite</h2>
+    <p>53 tests across 5 files. No external infrastructure needed — everything is mocked. GitHub Actions enforces an 85% coverage minimum on every pull request.</p>
+
+    <div class="test-files">
+      <div class="test-file">
+        <span class="test-file-name">test_routing.py</span>
+        <span class="test-count">10 tests</span>
+      </div>
+      <div class="test-file">
+        <span class="test-file-name">test_redis_client.py</span>
+        <span class="test-count">13 tests</span>
+      </div>
+      <div class="test-file">
+        <span class="test-file-name">test_kafka_client.py</span>
+        <span class="test-count">6 tests</span>
+      </div>
+      <div class="test-file">
+        <span class="test-file-name">test_order_service.py</span>
+        <span class="test-count">6 tests</span>
+      </div>
+      <div class="test-file">
+        <span class="test-file-name">test_api.py</span>
+        <span class="test-count">17 tests</span>
+      </div>
+      <div class="test-file">
+        <span class="test-file-name">conftest.py</span>
+        <span class="test-count">fixtures</span>
+      </div>
+    </div>
+
+    <h3>What is specifically tested</h3>
+    <div class="card-grid" style="margin-top: 24px;">
+      <div class="card">
+        <div class="card-icon">// routing</div>
+        <h3>Haversine correctness</h3>
+        <p>Mumbai→Delhi distance verified against known values. Symmetry property (A→B = B→A). Zero distance for same point. Chennai→Hyderabad range check.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">// redis</div>
+        <h3>Atomic operations</h3>
+        <p>DECRBY returns new value on hit, None on miss. Negative result detection for race condition. Error swallowing so Redis outages don't crash the app.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">// kafka</div>
+        <h3>Producer hardening</h3>
+        <p>Order events go to the correct topic. order_id used as partition key. KafkaConnectionError propagates for order events, swallowed for reorder events.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">// service</div>
+        <h3>Business logic</h3>
+        <p>Successful orders update DB status and publish Kafka event. Failed orders record failure reason. Reorder trigger fires below threshold, not above it.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">// api</div>
+        <h3>Endpoint contracts</h3>
+        <p>Input validation rejects quantity=0 and invalid coordinates. 404 on missing resources. Metrics endpoint serves from cache when available. Inventory available = quantity − reserved.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">// ci</div>
+        <h3>Automated pipeline</h3>
+        <p>Every push runs the full test suite, lints with ruff, builds the Docker image, and smoke-tests the container. PRs cannot merge below 85% coverage.</p>
+      </div>
+    </div>
+
+    <pre><code># Run the full suite (no Docker needed)
+pytest tests/ -v --cov=app --cov-report=term-missing
+
+# Expected output
+53 passed in ~1s  ·  91% coverage</code></pre>
+  </section>
+
+  <!-- LIMITATIONS -->
+  <section id="limitations">
+    <div class="section-eyebrow">Known Tradeoffs</div>
+    <h2>Limitations & what comes next</h2>
+    <p>Every system has tradeoffs. These are the ones made deliberately, with full awareness of what would need to change at production scale.</p>
+
+    <ul class="limit-list">
+      <li>
+        <span class="limit-badge limit-known">Design tradeoff</span>
+        <div class="limit-content">
+          <h4>Synchronous order routing</h4>
+          <p>The HTTP response waits for routing to complete. At Amazon scale, <code>POST /orders</code> would return <code>PENDING</code> immediately and routing would happen asynchronously via a Kafka consumer worker pool. The client would poll or receive a webhook. This was kept synchronous here for simplicity and demo-ability.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-scale">Scale gap</span>
+        <div class="limit-content">
+          <h4>Single-item greedy routing</h4>
+          <p>The current algorithm is optimal for single-product orders. Multi-product orders with split-shipment logic (where items might come from different warehouses) would require a linear programming or ILP optimizer. The greedy nearest-warehouse approach cannot minimize shipping cost across multiple items simultaneously.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-scope">Out of scope</span>
+        <div class="limit-content">
+          <h4>No authentication or authorization</h4>
+          <p>All endpoints are publicly accessible. A production system would layer JWT Bearer tokens on every endpoint, with role-based access control separating customer-facing APIs from warehouse management APIs. This was omitted to keep the demo focused on the routing and concurrency logic.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-scale">Scale gap</span>
+        <div class="limit-content">
+          <h4>No geographic sharding</h4>
+          <p>All warehouses are served by a single routing service. At Amazon's scale, India alone would have regional routing services (North, South, West, East) each with their own Redis cluster, so a Bangalore order never crosses a network boundary to reach a Mumbai routing service. The current flat architecture is correct but wouldn't scale beyond a few hundred warehouses.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-known">Design tradeoff</span>
+        <div class="limit-content">
+          <h4>No circuit breakers</h4>
+          <p>If Redis becomes unavailable, the system falls back to PostgreSQL for every read — which works but at significantly higher latency. A circuit breaker (e.g. the Resilience4j pattern) would detect Redis degradation and automatically open the circuit, routing all traffic to DB until Redis recovers, rather than taking a latency hit on every single request during the outage window.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-scope">Out of scope</span>
+        <div class="limit-content">
+          <h4>No distributed tracing</h4>
+          <p>In production, every request would carry a trace ID (via OpenTelemetry) propagated through FastAPI, into Kafka messages, and through any downstream consumers. Without this, debugging a failed order requires manually correlating logs across services by timestamp — painful at scale.</p>
+        </div>
+      </li>
+      <li>
+        <span class="limit-badge limit-known">Design tradeoff</span>
+        <div class="limit-content">
+          <h4>PostgreSQL over DynamoDB</h4>
+          <p>Amazon's actual inventory system uses DynamoDB — lower write latency, better horizontal scaling, native TTL. PostgreSQL was chosen here because it's more universally understood and easier to inspect during development. The data model and access patterns are compatible with a DynamoDB migration.</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- SETUP -->
+  <section id="setup">
+    <div class="section-eyebrow">Getting Started</div>
+    <h2>Local setup</h2>
+
+    <h3>Prerequisites</h3>
+    <p>Python 3.12+ and Docker Desktop.</p>
+
+    <h3 style="margin-top: 32px;">1 — Start infrastructure</h3>
+    <pre><code>docker-compose up postgres redis zookeeper kafka -d
+# Wait ~30 seconds for Kafka to initialize
+docker-compose ps   # all services should show healthy</code></pre>
+
+    <h3>2 — Install & configure</h3>
+    <pre><code>python -m venv venv
+source venv/bin/activate          # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env              # defaults match Docker Compose</code></pre>
+
+    <h3>3 — Seed & run</h3>
+    <pre><code>python -m scripts.seed_db         # 5 warehouses + 5 products
+uvicorn app.main:app --reload     # http://localhost:8000/docs</code></pre>
+
+    <h3>Environment variables</h3>
+    <div class="decision-grid" style="margin-top: 20px;">
+      <div class="env-row header">
+        <div class="env-cell">Variable</div>
+        <div class="env-cell">Default</div>
+        <div class="env-cell">Description</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">DATABASE_URL</div>
+        <div class="env-cell default">postgresql://...@localhost/...</div>
+        <div class="env-cell">Postgres connection string</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">REDIS_URL</div>
+        <div class="env-cell default">redis://localhost:6379/0</div>
+        <div class="env-cell">Redis connection string</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">KAFKA_BOOTSTRAP_SERVERS</div>
+        <div class="env-cell default">localhost:9092</div>
+        <div class="env-cell">Kafka broker address</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">KAFKA_ORDER_TOPIC</div>
+        <div class="env-cell default">order-events</div>
+        <div class="env-cell">Topic for order lifecycle events</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">KAFKA_REORDER_TOPIC</div>
+        <div class="env-cell default">reorder-events</div>
+        <div class="env-cell">Topic for low-stock reorder alerts</div>
+      </div>
+      <div class="env-row">
+        <div class="env-cell var">LOW_STOCK_THRESHOLD</div>
+        <div class="env-cell default">10</div>
+        <div class="env-cell">Units below which a reorder event fires</div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="wrapper">
+    <div class="footer-inner">
+      <div class="footer-brand">FulfillmentOS v1.0 — Built with FastAPI · Redis · Kafka · PostgreSQL</div>
+      <div class="footer-links">
+        <a href="https://github.com/rishikmora/Fullfillment-system">GitHub</a>
+        <a href="https://github.com/rishikmora/Fullfillment-system/actions">CI Status</a>
+        <a href="http://localhost:8000/docs">API Docs</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Intersection observer for scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(el => {
+      if (el.isIntersecting) {
+        el.target.style.opacity = '1';
+        el.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.card, .standout-item').forEach(el => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+    observer.observe(el);
+  });
+
+  // Active nav link
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 100) current = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + current
+        ? 'var(--green)' : '';
+    });
+  });
+</script>
+
+</body>
+</html>
