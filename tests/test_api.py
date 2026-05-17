@@ -48,7 +48,7 @@ class TestWarehouseAPI:
 
     def test_update_inventory(self, client, warehouse_mumbai, product):
         with patch("app.api.warehouses.cache_inventory"), \
-             patch("app.api.warehouses.invalidate_inventory"):
+             
             resp = client.put(
                 f"/warehouses/{warehouse_mumbai.id}/inventory/{product.id}",
                 json={"quantity": 200},
