@@ -8,7 +8,7 @@ from app.api.schemas import (
     WarehouseCreate, WarehouseResponse,
     InventoryUpdateRequest, InventoryResponse,
 )
-from app.db.redis_client import cache_inventory, invalidate_inventory
+from app.db.redis_client import cache_inventory
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/warehouses", tags=["warehouses"])

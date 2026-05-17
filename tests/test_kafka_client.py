@@ -4,7 +4,7 @@ Covers: producer lifecycle, event publishing, error handling.
 """
 
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 from aiokafka.errors import KafkaConnectionError
 
 from app.core import kafka_client as kc

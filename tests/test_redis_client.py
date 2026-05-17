@@ -3,7 +3,6 @@ Tests for app/db/redis_client.py
 Covers: cache reads, writes, atomic decrement, invalidation, metrics cache.
 """
 
-import pytest
 import redis
 from unittest.mock import patch, MagicMock
 

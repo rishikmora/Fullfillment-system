@@ -23,7 +23,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models.models import Warehouse, Inventory, Order, OrderStatus, WarehouseStatus
+from app.models.models import Warehouse, Inventory, WarehouseStatus
 from app.db.redis_client import (
     get_cached_inventory,
     cache_inventory,

@@ -4,7 +4,7 @@ Covers: full order lifecycle, reorder triggers, Kafka publishing.
 """
 
 import pytest
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch
 
 from app.services.order_service import process_order, _check_and_trigger_reorder
 from app.models.models import OrderStatus

@@ -4,10 +4,12 @@ Unit and integration tests for the fulfillment system.
 Run with: pytest tests/ -v --cov=app --cov-report=term-missing
 """
 
-import pytest
 from unittest.mock import MagicMock, patch
-from app.services.routing import route_order, haversine_km, RoutingResult
+from fastapi.testclient import TestClient
+from app.services.routing import route_order, haversine_km
 from app.models.models import Warehouse, Inventory, WarehouseStatus
+from app.main import app
+from app.db.base import get_db
 
 
 # ─── Unit Tests: Haversine ───────────────────────────────────────────────────
@@ -17,7 +19,6 @@ class TestHaversine:
         assert haversine_km(12.97, 77.59, 12.97, 77.59) == 0.0
 
     def test_mumbai_to_delhi(self):
-        # Mumbai to Delhi is approximately 1150km
         dist = haversine_km(19.076, 72.877, 28.614, 77.209)
         assert 1100 < dist < 1200, f"Expected ~1150km, got {dist:.0f}km"
 
@@ -54,41 +55,15 @@ def make_inventory(warehouse_id, product_id, qty, reserved=0):
 
 
 class TestRoutingAlgorithm:
-    def _make_db(self, warehouses, inventories):
-        db = MagicMock()
-
-        wh_query = MagicMock()
-        wh_query.filter.return_value.all.return_value = warehouses
-        db.query.return_value.filter.return_value.all.return_value = warehouses
-
-        def query_side_effect(model):
-            q = MagicMock()
-            if model == Warehouse:
-                q.filter.return_value.all.return_value = warehouses
-            elif model == Inventory:
-                def inv_filter(*args):
-                    fq = MagicMock()
-                    fq.with_for_update.return_value.first.return_value = inventories[0] if inventories else None
-                    fq.first.return_value = inventories[0] if inventories else None
-                    return fq
-                q.filter.side_effect = inv_filter
-            return q
-
-        db.query.side_effect = query_side_effect
-        return db
-
     @patch("app.services.routing.get_cached_inventory", return_value=None)
     @patch("app.services.routing.cache_inventory")
     @patch("app.services.routing.decrement_cached_inventory", return_value=50)
     def test_routes_to_nearest_warehouse(self, mock_dec, mock_cache, mock_get):
-        # Destination: Pune (~150km from Mumbai, ~1000km from Delhi)
         dest_lat, dest_lon = 18.5204, 73.8567
 
         wh_mumbai = make_warehouse("wh-mumbai", "Mumbai Hub", 19.076, 72.877)
         wh_delhi = make_warehouse("wh-delhi", "Delhi Hub", 28.614, 77.209)
-
         inv_mumbai = make_inventory("wh-mumbai", "prod-1", 100)
-        inv_delhi = make_inventory("wh-delhi", "prod-1", 100)
 
         db = MagicMock()
 
@@ -106,23 +81,20 @@ class TestRoutingAlgorithm:
             return q
 
         db.query.side_effect = query_side
-        mock_get.side_effect = lambda wid, pid: 100  # both have stock
+        mock_get.side_effect = lambda wid, pid: 100
 
         result = route_order(db, "prod-1", 10, dest_lat, dest_lon)
 
         assert result.success is True
-        assert result.warehouse_id == "wh-mumbai"  # nearer to Pune
+        assert result.warehouse_id == "wh-mumbai"
         assert result.distance_km < 200
 
     @patch("app.services.routing.get_cached_inventory", return_value=0)
     def test_fails_when_no_stock(self, mock_get):
         wh = make_warehouse("wh-1", "Hub", 19.076, 72.877)
-
         db = MagicMock()
         db.query.return_value.filter.return_value.all.return_value = [wh]
-
         result = route_order(db, "prod-1", 10, 18.52, 73.85)
-
         assert result.success is False
         assert "stock" in result.failure_reason.lower()
 
@@ -131,21 +103,12 @@ class TestRoutingAlgorithm:
     def test_fails_when_no_active_warehouses(self, mock_cache, mock_get):
         db = MagicMock()
         db.query.return_value.filter.return_value.all.return_value = []
-
         result = route_order(db, "prod-1", 5, 18.52, 73.85)
-
         assert result.success is False
         assert "No active warehouses" in result.failure_reason
 
 
 # ─── API Health Test ─────────────────────────────────────────────────────────
-
-from fastapi.testclient import TestClient
-from app.main import app
-
-
-from app.db.base import get_db
-
 
 class TestAPI:
     def setup_method(self):

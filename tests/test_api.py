@@ -3,7 +3,6 @@ Tests for app/api/warehouses.py and app/api/orders.py
 Uses real SQLite in-memory DB via the `client` fixture.
 """
 
-import pytest
 from unittest.mock import patch, AsyncMock
 
 
