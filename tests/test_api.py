@@ -47,8 +47,7 @@ class TestWarehouseAPI:
         assert resp.status_code == 404
 
     def test_update_inventory(self, client, warehouse_mumbai, product):
-        with patch("app.api.warehouses.cache_inventory"), \
-             
+        with patch("app.api.warehouses.cache_inventory"):
             resp = client.put(
                 f"/warehouses/{warehouse_mumbai.id}/inventory/{product.id}",
                 json={"quantity": 200},
