@@ -1,137 +1,170 @@
-# Smart Order Fulfillment System
+<div align="center">
 
-A production-grade distributed order routing system built with FastAPI, Kafka, Redis, and PostgreSQL. Routes customer orders to the nearest warehouse with available stock in real time.
+```
+   ███████╗██╗   ██╗██╗     ███████╗██╗██╗     ██╗     ███╗   ███╗███████╗███╗   ██╗████████╗
+   ██╔════╝██║   ██║██║     ██╔════╝██║██║     ██║     ████╗ ████║██╔════╝████╗  ██║╚══██╔══╝
+█████╗  ██║   ██║██║     █████╗  ██║██║     ██║     ██╔████╔██║█████╗  ██╔██╗ ██║   ██║
+██╔══╝  ██║   ██║██║     ██╔══╝  ██║██║     ██║     ██║╚██╔╝██║██╔══╝  ██║╚██╗██║   ██║
+██║     ╚██████╔╝███████╗██║     ██║███████╗███████╗██║ ╚═╝ ██║███████╗██║ ╚████║   ██║
+╚═╝      ╚═════╝ ╚══════╝╚═╝     ╚═╝╚══════╝╚══════╝╚═╝     ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
+                                                                              OS v1.0.0
+```
+
+**Distributed order routing engine — nearest warehouse, real-time inventory, zero overselling.**
+
+[![CI](https://img.shields.io/github/actions/workflow/status/rishikmora/Fullfillment-system/ci.yml?branch=main&style=flat-square&label=CI&color=00e676)](https://github.com/rishikmora/Fullfillment-system/actions)
+[![Coverage](https://img.shields.io/badge/coverage-91%25-00e676?style=flat-square)](https://github.com/rishikmora/Fullfillment-system)
+[![Tests](https://img.shields.io/badge/tests-53%20passed-00e676?style=flat-square)](https://github.com/rishikmora/Fullfillment-system)
+[![Python](https://img.shields.io/badge/python-3.12-blue?style=flat-square)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=flat-square)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/license-MIT-lightgrey?style=flat-square)](LICENSE)
+
+</div>
+
+---
+
+## What is this?
+
+A production-grade order fulfillment backend that routes customer orders to the **nearest warehouse with available stock** — in real time, under concurrent load, without overselling.
+
+Built as a simplified model of Amazon's fulfillment network. Every design decision mirrors what runs at scale in real distributed systems.
+
+```
+POST /orders  →  Haversine routing  →  Redis atomic check  →  Kafka event  →  Dispatched
+                      ↓                       ↓
+               5 active warehouses     Cache-aside pattern
+               scored by distance      DECRBY is atomic
+               nearest wins            no race conditions
+```
 
 ---
 
 ## Architecture
 
 ```
-Client → FastAPI → Routing Algorithm → Warehouse (nearest + in-stock)
-                ↓              ↑
-              Kafka         Redis (inventory cache)
-                ↓
-           PostgreSQL (orders, audit log)
-                ↓
-         Reorder Service (low-stock alerts)
+┌─────────────┐     REST      ┌──────────────────────────────────────────────┐
+│   Client    │ ────────────► │                  FastAPI                      │
+└─────────────┘               │  • Request timing middleware                  │
+                              │  • Pydantic validation                        │
+                              │  • /orders  /warehouses  /health              │
+                              └──────────┬───────────────────┬───────────────┘
+                                         │                   │
+                              ┌──────────▼──────┐   ┌───────▼────────┐
+                              │  Routing Engine  │   │  Order Service  │
+                              │  • Haversine km  │   │  • Lifecycle    │
+                              │  • Redis-first   │   │  • Reorder chk  │
+                              │  • DB fallback   │   │  • Kafka pub    │
+                              │  • Race detect   │   └───────┬────────┘
+                              └──────────┬───────┘           │
+                                         │           ┌───────▼────────┐
+                              ┌──────────▼──────┐    │     Kafka       │
+                              │      Redis       │    │  order-events   │
+                              │  Live inventory  │    │  reorder-events │
+                              │  Metrics cache   │    └────────────────┘
+                              │  DECRBY atomic   │
+                              └──────────┬───────┘
+                                         │
+                              ┌──────────▼──────┐
+                              │   PostgreSQL     │
+                              │  Orders + audit  │
+                              │  Inventory rows  │
+                              │  SELECT FOR UPD  │
+                              └─────────────────┘
 ```
 
-### Key Design Decisions
+---
 
-| Decision | Choice | Why |
+## Key Design Decisions
+
+| Decision | Choice | Rationale |
 |---|---|---|
-| Inventory source of truth | Redis | Atomic `DECRBY` prevents overselling under concurrent load |
-| Order events | Kafka | Decouples fulfillment from dispatch/analytics/reorder |
-| Distance metric | Haversine | Correct great-circle distance, O(n) per order |
-| DB locking | `SELECT FOR UPDATE` | Prevents double-assignment at the DB layer |
-| Cache pattern | Cache-aside | Simple, resilient — DB fallback on cache miss |
+| Inventory source of truth | Redis `DECRBY` | Atomic — prevents overselling under 5k+ concurrent orders |
+| Order events | Kafka (idempotent producer) | Decouples placement from dispatch, analytics, reorder |
+| Distance metric | Haversine great-circle | Correct for geo, O(n) per order, no external dependency |
+| DB concurrency | `SELECT FOR UPDATE` | Serializes final reservation at the DB layer |
+| Cache pattern | Cache-aside | Simple, resilient — DB fallback on miss, no write-through complexity |
+| Race condition handling | Negative DECRBY detection | If result < 0, reroute to next nearest warehouse |
 
 ---
 
-## Performance Characteristics
+## Performance
 
-- **Throughput**: ~5,000 concurrent orders handled via Redis atomic decrements
-- **Latency (P99)**: < 80ms per order (with warm Redis cache)
-- **Fulfillment rate**: > 99% in normal stock conditions
-- **Reorder trigger**: Automatic when stock drops below configurable threshold (default: 10 units)
-
----
-
-## Project Structure
-
-```
-fulfillment-system/
-├── app/
-│   ├── main.py                  # FastAPI entry point, lifespan, middleware
-│   ├── api/
-│   │   ├── orders.py            # POST /orders, GET /orders/{id}, GET /metrics
-│   │   ├── warehouses.py        # Warehouse CRUD + inventory management
-│   │   └── schemas.py           # Pydantic request/response models
-│   ├── core/
-│   │   ├── config.py            # Settings via pydantic-settings
-│   │   └── kafka_client.py      # Async Kafka producer + consumer
-│   ├── db/
-│   │   ├── base.py              # SQLAlchemy engine + session
-│   │   └── redis_client.py      # Redis cache with atomic ops
-│   ├── models/
-│   │   └── models.py            # SQLAlchemy ORM models
-│   └── services/
-│       ├── routing.py           # Haversine routing algorithm (core logic)
-│       └── order_service.py     # Order lifecycle orchestration
-├── tests/
-│   └── test_routing.py          # Unit + integration tests
-├── scripts/
-│   └── seed_db.py               # Seed warehouses, products, inventory
-├── docker-compose.yml           # Postgres + Redis + Kafka + API
-├── Dockerfile
-├── requirements.txt
-└── .env.example
-```
+| Metric | Value |
+|---|---|
+| Concurrent orders | 5,000+ (Redis handles the hot path) |
+| P99 latency | < 80ms (warm cache) |
+| Fulfillment rate | > 99% under normal stock |
+| Test suite runtime | ~1 second (53 tests, no infra needed) |
+| Coverage | 91% |
 
 ---
 
 ## Quick Start
 
-### 1. Prerequisites
-- Docker + Docker Compose
-- Python 3.12+
+### Prerequisites
 
-### 2. Start infrastructure
+- Python 3.12+
+- Docker + Docker Compose
+
+### 1 — Start infrastructure
 
 ```bash
-docker-compose up postgres redis kafka -d
+docker-compose up postgres redis zookeeper kafka -d
 ```
 
-### 3. Install dependencies
+Wait ~30s for Kafka. Check status:
+
+```bash
+docker-compose ps   # all services should show healthy
+```
+
+### 2 — Install & configure
 
 ```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env              # defaults match Docker Compose
 ```
 
-### 4. Configure environment
-
-```bash
-cp .env.example .env
-```
-
-### 5. Seed data
+### 3 — Seed data
 
 ```bash
 python -m scripts.seed_db
+# → 5 warehouses (Mumbai, Delhi, Bengaluru, Chennai, Hyderabad)
+# → 5 products with randomised inventory
 ```
 
-### 6. Run the API
+### 4 — Run
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-API docs: http://localhost:8000/docs
+API docs live at **[http://localhost:8000/docs](http://localhost:8000/docs)**
 
 ---
 
 ## API Reference
 
-### Place an Order
+### Place an order
+
 ```http
 POST /orders
 Content-Type: application/json
 
 {
   "customer_id": "cust-123",
-  "product_id": "<product-uuid>",
+  "product_id": "uuid",
   "quantity": 5,
   "destination_lat": 18.5204,
   "destination_lon": 73.8567
 }
 ```
 
-Response:
 ```json
 {
-  "order_id": "...",
+  "order_id": "b3f1a2...",
   "status": "dispatched",
   "warehouse": "Mumbai Central Hub",
   "distance_km": 148.3,
@@ -139,7 +172,8 @@ Response:
 }
 ```
 
-### Get Metrics Dashboard
+### Live metrics dashboard
+
 ```http
 GET /orders/metrics/dashboard
 ```
@@ -154,58 +188,116 @@ GET /orders/metrics/dashboard
 }
 ```
 
-### Update Inventory
-```http
-PUT /warehouses/{warehouse_id}/inventory/{product_id}
-Content-Type: application/json
+### Manage inventory
 
-{"quantity": 150}
+```http
+GET  /warehouses/                              → list active warehouses
+GET  /warehouses/{id}/inventory               → stock levels per product
+PUT  /warehouses/{id}/inventory/{product_id}  → update stock quantity
+POST /warehouses/                             → register new warehouse
 ```
 
 ---
 
-## Running Tests
+## Project Structure
+
+```
+fulfillment-system/
+│
+├── app/
+│   ├── main.py                   # FastAPI app, lifespan, middleware
+│   │
+│   ├── api/
+│   │   ├── orders.py             # POST /orders, GET /metrics
+│   │   ├── warehouses.py         # Warehouse CRUD + inventory
+│   │   └── schemas.py            # Pydantic request/response models
+│   │
+│   ├── core/
+│   │   ├── config.py             # Settings via pydantic-settings + .env
+│   │   └── kafka_client.py       # Async producer (idempotent, acks=all)
+│   │
+│   ├── db/
+│   │   ├── base.py               # SQLAlchemy engine + session
+│   │   └── redis_client.py       # Atomic ops, cache-aside, TTL management
+│   │
+│   ├── models/
+│   │   └── models.py             # ORM: Warehouse, Product, Inventory, Order
+│   │
+│   └── services/
+│       ├── routing.py            # ← Core algorithm: Haversine + Redis + fallback
+│       └── order_service.py      # Order lifecycle orchestration
+│
+├── tests/
+│   ├── conftest.py               # Fixtures: SQLite DB, mocked Redis + Kafka
+│   ├── test_routing.py           # Haversine math + routing algorithm
+│   ├── test_redis_client.py      # Cache ops, atomic decrement, race detection
+│   ├── test_kafka_client.py      # Producer lifecycle, topic routing, error handling
+│   ├── test_order_service.py     # Order lifecycle, reorder triggers
+│   └── test_api.py               # Full endpoint coverage via TestClient
+│
+├── scripts/
+│   └── seed_db.py                # Seeds 5 Indian warehouses + 5 products
+│
+├── .github/
+│   └── workflows/ci.yml          # Test → lint → Docker build on every push
+│
+├── docker-compose.yml            # Postgres + Redis + Kafka + API
+├── Dockerfile
+└── requirements.txt
+```
+
+---
+
+## Routing Algorithm
+
+```python
+def route_order(db, product_id, quantity, dest_lat, dest_lon):
+    # 1. Load active warehouses from DB
+    # 2. For each warehouse — Redis first (O(1)), DB fallback on miss
+    # 3. Filter: available_stock >= quantity
+    # 4. Score by Haversine distance to delivery address
+    # 5. Pick nearest
+    # 6. DECRBY in Redis (atomic — no race condition)
+    # 7. If result < 0 → race detected → try next warehouse
+    # 8. SELECT FOR UPDATE on inventory row
+    # 9. Commit reservation → publish Kafka event
+```
+
+The greedy nearest-warehouse approach is O(n) per order. At Amazon scale this would shard by geographic region, with an LP optimizer for multi-item split-shipment orders — a natural extension discussed in the interview talking points below.
+
+---
+
+## Tests
 
 ```bash
+# Run full suite (no Docker/Postgres/Redis needed)
 pytest tests/ -v --cov=app --cov-report=term-missing
 ```
 
----
+```
+53 passed in 1.04s  ·  91% coverage
+```
 
-## How the Routing Algorithm Works
-
-1. **Load active warehouses** from DB
-2. **Check stock** for each warehouse — Redis first (O(1)), DB fallback on cache miss
-3. **Filter** warehouses with `available_stock >= order_quantity`
-4. **Score** eligible warehouses by Haversine distance to delivery address
-5. **Pick nearest** warehouse
-6. **Atomic decrement** Redis cache (`DECRBY` — no race conditions)
-7. **DB lock** with `SELECT FOR UPDATE` on the inventory row
-8. **Commit** reservation, publish Kafka event
-9. **Check threshold** — trigger reorder event if stock drops below limit
-
-### Race Condition Handling
-
-Under high concurrency, two orders may simultaneously see the same stock level. The system handles this with two layers:
-
-- **Redis `DECRBY`**: Atomic — if the result goes negative, a race was detected and the order falls back to the next nearest warehouse
-- **`SELECT FOR UPDATE`**: DB-level row lock ensures the final commit is serialized
+All external dependencies are mocked. Tests run fully offline, in under 2 seconds, on any machine with Python installed. GitHub Actions enforces an 85% coverage floor on every PR — coverage can never silently regress.
 
 ---
 
-## Interview Talking Points
 
-### "Why Kafka instead of direct DB writes?"
-Kafka decouples the order placement from downstream processing (dispatch systems, analytics pipelines, reorder service). If the dispatch service is slow or down, orders still succeed — they queue in Kafka. This is the core of Amazon's event-driven architecture.
+## Environment Variables
 
-### "Why Redis for inventory instead of just the DB?"
-Under 5,000 concurrent orders, hitting PostgreSQL for every availability check creates a bottleneck. Redis handles 100k+ ops/sec with sub-millisecond latency. The cache-aside pattern keeps it simple — cache miss falls back to DB and warms the cache.
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | `postgresql://...@localhost/fulfillment_db` | Postgres connection string |
+| `REDIS_URL` | `redis://localhost:6379/0` | Redis connection string |
+| `KAFKA_BOOTSTRAP_SERVERS` | `localhost:9092` | Kafka broker address |
+| `KAFKA_ORDER_TOPIC` | `order-events` | Topic for order lifecycle events |
+| `KAFKA_REORDER_TOPIC` | `reorder-events` | Topic for low-stock reorder alerts |
+| `LOW_STOCK_THRESHOLD` | `10` | Units below which a reorder event fires |
 
-### "How do you prevent overselling?"
-Two layers: (1) Redis `DECRBY` is atomic — if two requests decrement simultaneously, both operations complete without interference. If the result goes negative, we detect the race and reroute. (2) `SELECT FOR UPDATE` in PostgreSQL serializes the final reservation at the DB level.
+---
 
-### "What would you improve at Amazon scale?"
-- Replace greedy nearest-warehouse with an LP optimizer for multi-item orders (split shipments)
-- Add geographic sharding — each region has its own routing service
-- Use DynamoDB for inventory (Amazon's actual choice) — lower latency, better write throughput
-- Add circuit breakers (e.g. Resilience4j) around Redis and Kafka
+<div align="center">
+
+Built with FastAPI · SQLAlchemy · Redis · Kafka · PostgreSQL · Docker
+
+</div>
